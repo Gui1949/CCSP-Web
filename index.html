@@ -1,147 +1,204 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>City Camera SP - Monitoramento</title>
-    <style>
-        :root {
-            --bg-color: #0a0f1e;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --text-main: #ffffff;
-            --accent: #ffd700; /* Amarelo trânsito */
-            --success: #00ff88;
-            --warning: #ffcc00;
-            --danger: #ff4444;
-        }
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>City Camera São Paulo - Monitoramento</title>
+        <style>
+            :root {
+                --bg-color: #0f172a;
+                --card-bg: rgba(30, 41, 59, 0.7);
+                --text-main: #f8fafc;
+                --accent: #38bdf8;
+                --success: #22c55e;
+                --warning: #eab308;
+                --danger: #ef4444;
+            }
 
-        body, html {
-            margin: 0; padding: 0; height: 100%;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            overflow: hidden;
-        }
+            body, html {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                background-color: var(--bg-color);
+                color: var(--text-main);
+                overflow: hidden;
+            }
 
-        .container { display: flex; height: 100vh; width: 100vw; }
+            .container {
+                display: flex;
+                height: 100vh;
+                width: 100vw;
+            }
 
-        /* Esquerda: Câmeras */
-        .camera-section {
-            flex: 2;
-            background: #000;
-            border-right: 3px solid #222;
-        }
+            /* Lado Esquerdo: Câmeras CET */
+            .camera-section {
+                flex: 1.5; /* Dá mais espaço para o vídeo */
+                border-right: 2px solid #334155;
+                position: relative;
+            }
 
-        iframe { width: 100%; height: 100%; border: none; }
+            iframe {
+                width: 100%;
+                height: 100%;
+                border: none;
+            }
 
-        /* Direita: Status */
-        .status-section {
-            flex: 1;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
-        }
+            /* Lado Direito: Status Mobilidade */
+            .status-section {
+                flex: 1;
+                padding: 20px;
+                overflow-y: auto;
+                background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
 
-        .header {
-            text-align: center;
-            border-bottom: 2px solid var(--accent);
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-        }
+            .header {
+                text-align: center;
+                border-bottom: 1px solid var(--accent);
+                padding-bottom: 10px;
+                margin-bottom: 10px;
+            }
 
-        .header h1 { font-size: 1.2rem; margin: 0; color: var(--accent); letter-spacing: 1px; }
+            .header h1 {
+                font-size: 1.5rem;
+                margin: 0;
+                color: var(--accent);
+                text-transform: uppercase;
+                letter-spacing: 2px;
+            }
 
-        .line-card {
-            background: var(--card-bg);
-            margin-bottom: 8px;
-            padding: 10px 15px;
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 6px solid transparent;
-        }
+            .update-info {
+                font-size: 0.8rem;
+                opacity: 0.7;
+            }
 
-        .line-name { font-weight: bold; font-size: 0.9rem; }
-        .line-status { font-size: 0.8rem; font-weight: 500; }
+            .line-card {
+                background: var(--card-bg);
+                border-radius: 8px;
+                padding: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                border-left: 5px solid transparent;
+                transition: transform 0.2s;
+                backdrop-filter: blur(5px);
+            }
 
-        .verde { color: var(--success); }
-        .amarelo { color: var(--warning); }
-        .vermelho { color: var(--danger); }
+            .line-info {
+                display: flex;
+                flex-direction: column;
+            }
 
-        #timer { font-size: 0.7rem; opacity: 0.6; margin-top: 5px; display: block; }
-    </style>
-</head>
-<body>
+            .line-name {
+                font-weight: bold;
+                font-size: 1rem;
+            }
 
-<div class="container">
-    <section class="camera-section">
-        <iframe src="https://cameras.cetsp.com.br/View/Cam.aspx"></iframe>
-    </section>
+            .line-status {
+                font-size: 0.85rem;
+                margin-top: 4px;
+            }
 
-    <section class="status-section">
-        <div class="header">
-            <h1>STATUS OPERACIONAL</h1>
-            <span id="timer">Atualizando em 60s</span>
+            /* Cores das Linhas (Baseadas no seu JSON) */
+            .status-verde { color: var(--success); }
+            .status-amarelo { color: var(--warning); }
+            .status-vermelho { color: var(--danger); }
+
+            /* Scrollbar estilizada para a live */
+            .status-section::-webkit-scrollbar {
+                width: 6px;
+            }
+            .status-section::-webkit-scrollbar-thumb {
+                background: var(--accent);
+                border-radius: 10px;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div class="container">
+            <section class="camera-section">
+                <iframe src="https://cameras.cetsp.com.br/View/Cam.aspx" title="CET SP Câmeras"></iframe>
+            </section>
+
+            <section class="status-section">
+                <div class="header">
+                    <h1>METRÔ / CPTM</h1>
+                    <div class="update-info">Próxima atualização em: <span id="timer">60</span>s</div>
+                </div>
+                <div id="status-container">
+                    Carregando informações...
+                </div>
+            </section>
         </div>
-        <div id="status-container">Carregando dados...</div>
-    </section>
-</div>
 
-<script>
-    // Usando o AllOrigins como proxy para evitar o erro de CORS
-    const API_URL = 'https://www.tictrens.com.br/helper/line-statuses';
-    
-    let timeRemaining = 60;
+        <script>
+            const JSON_URL = 'https://www.tictrens.com.br/helper/line-statuses';
+            let countdown = 60;
 
-    async function updateStatus() {
-        try {
-            const response = await fetch(API_URL);
-            const rawData = await response.json();
-            const data = JSON.parse(rawData.contents); // O AllOrigins retorna o JSON dentro de 'contents'
+            // Função para traduzir a cor do JSON para a borda do card
+            function getLineHex(colorName) {
+                const colors = {
+                    'Azul': '#005599', 'Verde': '#008144', 'Vermelha': '#ef4135',
+                    'Prata': '#96999b', 'Amarela': '#ffce00', 'Lilás': '#a44e9b',
+                    'TURQUESA': '#00958b', 'CORAL': '#f6821f', 'SAFIRA': '#005599',
+                    'JADE': '#00a859', 'Diamante': '#919191', 'Esmeralda': '#00a98e',
+                    'Ouro': '#d6a85e'
+                };
+                return colors[colorName] || '#ffffff';
+            }
 
-            const container = document.getElementById('status-container');
-            container.innerHTML = '';
+            async function fetchStatus() {
+                try {
+                    const response = await fetch(JSON_URL);
+                    const data = await response.json();
+                    renderStatus(data.data);
+                    countdown = 60;
+                } catch (error) {
+                    console.error("Erro ao buscar dados:", error);
+                    // Caso dê erro de CORS no navegador local, você pode precisar de um proxy ou rodar no servidor
+                }
+            }
 
-            data.data.forEach(category => {
-                category.listItem.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'line-card';
-                    card.style.borderLeftColor = getLineColor(item.color);
+            function renderStatus(categories) {
+                const container = document.getElementById('status-container');
+                container.innerHTML = '';
 
-                    const statusClass = item.statusColor === 'verde' ? 'verde' : 'amarelo';
-                    
-                    card.innerHTML = `
-                        <span class="line-name">${item.line}</span>
-                        <span class="line-status ${statusClass}">${item.status.toUpperCase()}</span>
-                    `;
-                    container.appendChild(card);
+                categories.forEach(cat => {
+                    cat.listItem.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'line-card';
+                        card.style.borderLeftColor = getLineHex(item.color);
+
+                        const statusClass = item.statusColor === 'verde' ? 'status-verde' : 'status-amarelo';
+                        
+                        card.innerHTML = `
+                            <div class="line-info">
+                                <span class="line-name">${item.line}</span>
+                            </div>
+                            <div class="line-status ${statusClass}">
+                                ● ${item.status || 'Operação Normal'}
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
                 });
-            });
-            timeRemaining = 60;
-        } catch (e) {
-            document.getElementById('status-container').innerHTML = "Erro ao carregar. Tentando novamente...";
-        }
-    }
+            }
 
-    function getLineColor(color) {
-        const colors = {
-            'Azul': '#005599', 'Verde': '#008144', 'Vermelha': '#ef4135',
-            'Prata': '#96999b', 'Amarela': '#ffce00', 'Lilás': '#a44e9b',
-            'TURQUESA': '#00958b', 'CORAL': '#f6821f', 'SAFIRA': '#005599',
-            'JADE': '#00a859', 'Diamante': '#919191', 'Esmeralda': '#00a98e', 'Ouro': '#d6a85e'
-        };
-        return colors[color] || '#888';
-    }
+            // Timer de atualização
+            setInterval(() => {
+                countdown--;
+                document.getElementById('timer').innerText = countdown;
+                if (countdown <= 0) {
+                    fetchStatus();
+                }
+            }, 1000);
 
-    setInterval(() => {
-        timeRemaining--;
-        document.getElementById('timer').innerText = `Atualizando em ${timeRemaining}s`;
-        if (timeRemaining <= 0) updateStatus();
-    }, 1000);
-
-    updateStatus();
-</script>
-</body>
-</html>
+            // Inicialização
+            fetchStatus();
+        </script>
+    </body>
+    </html>
