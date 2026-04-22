@@ -92,13 +92,12 @@
 <script>
     // Usando o AllOrigins como proxy para evitar o erro de CORS
     const API_URL = 'https://www.tictrens.com.br/helper/line-statuses';
-    const PROXY_URL = `https://api.allorigins.win/get?url=${encodeURIComponent(API_URL)}`;
     
     let timeRemaining = 60;
 
     async function updateStatus() {
         try {
-            const response = await fetch(PROXY_URL);
+            const response = await fetch(API_URL);
             const rawData = await response.json();
             const data = JSON.parse(rawData.contents); // O AllOrigins retorna o JSON dentro de 'contents'
 
