@@ -24,16 +24,31 @@
 
         .container { display: flex; height: 100vh; width: 100vw; }
 
-        /* Lado Esquerdo: Câmeras CET */
+        /* LADO ESQUERDO: CAMERA COM CORTE DO CABEÇALHO */
         .camera-section {
-            flex: 1.8; /* Aumentei um pouco a câmera para a live */
+            flex: 1.8; 
             border-right: 2px solid #334155;
             background: #000;
+            position: relative;
+            overflow: hidden; /* Importante para o corte funcionar */
         }
 
-        iframe { width: 100%; height: 100%; border: none; }
+        /* Esta div faz o "crop" do iframe */
+        .iframe-wrapper {
+            position: absolute;
+            top: -155px; /* AQUI: Empurra o cabeçalho da CET para cima */
+            left: 0;
+            width: 100%;
+            height: calc(100% + 155px); /* Compensa o que foi empurrado */
+        }
 
-        /* Lado Direito: Status */
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* LADO DIREITO: STATUS */
         .status-section {
             flex: 1;
             padding: 15px;
@@ -75,7 +90,9 @@
 
     <div class="container">
         <section class="camera-section">
-            <iframe src="https://cameras.cetsp.com.br/View/Cam.aspx"></iframe>
+            <div class="iframe-wrapper">
+                <iframe src="https://cameras.cetsp.com.br/View/Cam.aspx" scrolling="no"></iframe>
+            </div>
         </section>
 
         <section class="status-section">
@@ -83,13 +100,12 @@
                 <h1>METRÔ / CPTM</h1>
                 <div id="timer">Atualizando em: 60s</div>
             </div>
-            <div id="status-container">Iniciando monitoramento...</div>
+            <div id="status-container">Monitorando transporte...</div>
         </section>
     </div>
 
     <script>
         const API_URL = 'https://www.tictrens.com.br/helper/line-statuses';
-        // Usando o corsproxy.io que é bem mais confiável
         const PROXY = 'https://corsproxy.io/?' + encodeURIComponent(API_URL);
         
         let countdown = 60;
@@ -110,8 +126,6 @@
         async function loadData() {
             try {
                 const response = await fetch(PROXY);
-                if (!response.ok) throw new Error('Erro na rede');
-                
                 const json = await response.json();
                 const container = document.getElementById('status-container');
                 container.innerHTML = '';
@@ -134,7 +148,6 @@
                 });
                 countdown = 60;
             } catch (err) {
-                console.error(err);
                 document.getElementById('status-container').innerHTML = "Reconectando aos dados...";
             }
         }
