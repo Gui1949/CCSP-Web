@@ -1,204 +1,151 @@
-    <!DOCTYPE html>
-    <html lang="pt-br">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>City Camera São Paulo - Monitoramento</title>
-        <style>
-            :root {
-                --bg-color: #0f172a;
-                --card-bg: rgba(30, 41, 59, 0.7);
-                --text-main: #f8fafc;
-                --accent: #38bdf8;
-                --success: #22c55e;
-                --warning: #eab308;
-                --danger: #ef4444;
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Camera São Paulo - Live</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.8);
+            --text-main: #f8fafc;
+            --accent: #38bdf8;
+            --success: #22c55e;
+            --warning: #eab308;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        .container { display: flex; height: 100vh; width: 100vw; }
+
+        /* Lado Esquerdo: Câmeras CET */
+        .camera-section {
+            flex: 1.8; /* Aumentei um pouco a câmera para a live */
+            border-right: 2px solid #334155;
+            background: #000;
+        }
+
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* Lado Direito: Status */
+        .status-section {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .header h1 { font-size: 1.3rem; margin: 0; color: var(--accent); text-transform: uppercase; }
+
+        .line-card {
+            background: var(--card-bg);
+            border-radius: 6px;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 6px solid transparent;
+            font-size: 0.9rem;
+        }
+
+        .line-name { font-weight: bold; }
+        .status-verde { color: var(--success); font-weight: bold; }
+        .status-amarelo { color: var(--warning); font-weight: bold; }
+
+        #timer { font-size: 0.8rem; opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <section class="camera-section">
+            <iframe src="https://cameras.cetsp.com.br/View/Cam.aspx"></iframe>
+        </section>
+
+        <section class="status-section">
+            <div class="header">
+                <h1>METRÔ / CPTM</h1>
+                <div id="timer">Atualizando em: 60s</div>
+            </div>
+            <div id="status-container">Iniciando monitoramento...</div>
+        </section>
+    </div>
+
+    <script>
+        const API_URL = 'https://www.tictrens.com.br/helper/line-statuses';
+        // Usando o corsproxy.io que é bem mais confiável
+        const PROXY = 'https://corsproxy.io/?' + encodeURIComponent(API_URL);
+        
+        let countdown = 60;
+
+        function getLineColor(name) {
+            const colors = {
+                'Azul': '#005599', 'Verde': '#008144', 'Vermelha': '#ef4135',
+                'Prata': '#96999b', 'Amarela': '#ffce00', 'Lilás': '#a44e9b',
+                'TURQUESA': '#00958b', 'CORAL': '#f6821f', 'SAFIRA': '#005599',
+                'JADE': '#00a859', 'Diamante': '#919191', 'Esmeralda': '#00a98e', 'Ouro': '#d6a85e'
+            };
+            for (let key in colors) {
+                if (name.includes(key)) return colors[key];
             }
+            return '#fff';
+        }
 
-            body, html {
-                margin: 0;
-                padding: 0;
-                height: 100%;
-                font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                background-color: var(--bg-color);
-                color: var(--text-main);
-                overflow: hidden;
-            }
-
-            .container {
-                display: flex;
-                height: 100vh;
-                width: 100vw;
-            }
-
-            /* Lado Esquerdo: Câmeras CET */
-            .camera-section {
-                flex: 1.5; /* Dá mais espaço para o vídeo */
-                border-right: 2px solid #334155;
-                position: relative;
-            }
-
-            iframe {
-                width: 100%;
-                height: 100%;
-                border: none;
-            }
-
-            /* Lado Direito: Status Mobilidade */
-            .status-section {
-                flex: 1;
-                padding: 20px;
-                overflow-y: auto;
-                background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-                display: flex;
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .header {
-                text-align: center;
-                border-bottom: 1px solid var(--accent);
-                padding-bottom: 10px;
-                margin-bottom: 10px;
-            }
-
-            .header h1 {
-                font-size: 1.5rem;
-                margin: 0;
-                color: var(--accent);
-                text-transform: uppercase;
-                letter-spacing: 2px;
-            }
-
-            .update-info {
-                font-size: 0.8rem;
-                opacity: 0.7;
-            }
-
-            .line-card {
-                background: var(--card-bg);
-                border-radius: 8px;
-                padding: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                border-left: 5px solid transparent;
-                transition: transform 0.2s;
-                backdrop-filter: blur(5px);
-            }
-
-            .line-info {
-                display: flex;
-                flex-direction: column;
-            }
-
-            .line-name {
-                font-weight: bold;
-                font-size: 1rem;
-            }
-
-            .line-status {
-                font-size: 0.85rem;
-                margin-top: 4px;
-            }
-
-            /* Cores das Linhas (Baseadas no seu JSON) */
-            .status-verde { color: var(--success); }
-            .status-amarelo { color: var(--warning); }
-            .status-vermelho { color: var(--danger); }
-
-            /* Scrollbar estilizada para a live */
-            .status-section::-webkit-scrollbar {
-                width: 6px;
-            }
-            .status-section::-webkit-scrollbar-thumb {
-                background: var(--accent);
-                border-radius: 10px;
-            }
-        </style>
-    </head>
-    <body>
-
-        <div class="container">
-            <section class="camera-section">
-                <iframe src="https://cameras.cetsp.com.br/View/Cam.aspx" title="CET SP Câmeras"></iframe>
-            </section>
-
-            <section class="status-section">
-                <div class="header">
-                    <h1>METRÔ / CPTM</h1>
-                    <div class="update-info">Próxima atualização em: <span id="timer">60</span>s</div>
-                </div>
-                <div id="status-container">
-                    Carregando informações...
-                </div>
-            </section>
-        </div>
-
-        <script>
-            const JSON_URL = 'https://www.tictrens.com.br/helper/line-statuses';
-            let countdown = 60;
-
-            // Função para traduzir a cor do JSON para a borda do card
-            function getLineHex(colorName) {
-                const colors = {
-                    'Azul': '#005599', 'Verde': '#008144', 'Vermelha': '#ef4135',
-                    'Prata': '#96999b', 'Amarela': '#ffce00', 'Lilás': '#a44e9b',
-                    'TURQUESA': '#00958b', 'CORAL': '#f6821f', 'SAFIRA': '#005599',
-                    'JADE': '#00a859', 'Diamante': '#919191', 'Esmeralda': '#00a98e',
-                    'Ouro': '#d6a85e'
-                };
-                return colors[colorName] || '#ffffff';
-            }
-
-            async function fetchStatus() {
-                try {
-                    const response = await fetch(JSON_URL);
-                    const data = await response.json();
-                    renderStatus(data.data);
-                    countdown = 60;
-                } catch (error) {
-                    console.error("Erro ao buscar dados:", error);
-                    // Caso dê erro de CORS no navegador local, você pode precisar de um proxy ou rodar no servidor
-                }
-            }
-
-            function renderStatus(categories) {
+        async function loadData() {
+            try {
+                const response = await fetch(PROXY);
+                if (!response.ok) throw new Error('Erro na rede');
+                
+                const json = await response.json();
                 const container = document.getElementById('status-container');
                 container.innerHTML = '';
 
-                categories.forEach(cat => {
-                    cat.listItem.forEach(item => {
+                json.data.forEach(group => {
+                    group.listItem.forEach(item => {
                         const card = document.createElement('div');
                         card.className = 'line-card';
-                        card.style.borderLeftColor = getLineHex(item.color);
+                        card.style.borderLeftColor = getLineColor(item.line);
 
-                        const statusClass = item.statusColor === 'verde' ? 'status-verde' : 'status-amarelo';
-                        
+                        const isNormal = item.status.toLowerCase().includes('normal');
+                        const statusClass = isNormal ? 'status-verde' : 'status-amarelo';
+
                         card.innerHTML = `
-                            <div class="line-info">
-                                <span class="line-name">${item.line}</span>
-                            </div>
-                            <div class="line-status ${statusClass}">
-                                ● ${item.status || 'Operação Normal'}
-                            </div>
+                            <span class="line-name">${item.line}</span>
+                            <span class="${statusClass}">${item.status.toUpperCase()}</span>
                         `;
                         container.appendChild(card);
                     });
                 });
+                countdown = 60;
+            } catch (err) {
+                console.error(err);
+                document.getElementById('status-container').innerHTML = "Reconectando aos dados...";
             }
+        }
 
-            // Timer de atualização
-            setInterval(() => {
-                countdown--;
-                document.getElementById('timer').innerText = countdown;
-                if (countdown <= 0) {
-                    fetchStatus();
-                }
-            }, 1000);
+        setInterval(() => {
+            countdown--;
+            document.getElementById('timer').innerText = `Atualizando em: ${countdown}s`;
+            if (countdown <= 0) loadData();
+        }, 1000);
 
-            // Inicialização
-            fetchStatus();
-        </script>
-    </body>
-    </html>
+        loadData();
+    </script>
+</body>
+</html>
