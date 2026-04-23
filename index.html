@@ -2,8 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CITY CAMERA SP - MODO NEWS 2X</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CITY CAMERA SP - MOBILE PRO</title>
     <style>
         :root {
             --bg-color: #000;
@@ -14,169 +14,171 @@
         body, html {
             margin: 0; padding: 0; height: 100%;
             font-family: 'Segoe UI', Impact, sans-serif;
-            background-color: var(--bg-color);
+            background-color: #000;
             color: #fff;
             overflow: hidden;
+            touch-action: none; /* Impede o scroll da página toda no mobile */
         }
 
-        .container { 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            width: 100vw; 
-        }
+        .container { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
 
-        /* BARRA ESTILO NEWS */
         .news-bar {
-            height: 70px;
+            height: 60px;
             background: var(--bar-bg);
             display: flex;
             align-items: center;
-            border-bottom: 3px solid var(--accent);
-            border-top: 3px solid var(--accent);
+            border-bottom: 2px solid var(--accent);
+            border-top: 2px solid var(--accent);
             z-index: 1000;
         }
 
         .news-label {
             background: var(--accent);
             color: #000;
-            padding: 0 20px;
+            padding: 0 10px;
             height: 100%;
             display: flex;
             align-items: center;
             font-weight: 900;
-            font-size: 18px;
+            font-size: 14px;
             white-space: nowrap;
-            z-index: 1001;
-            text-transform: uppercase;
         }
 
-        marquee {
-            font-size: 36px;
-            font-weight: 900;
-            color: #fff;
-            display: flex;
-            align-items: center;
-        }
+        marquee { font-size: 28px; font-weight: 900; }
 
-        .marquee-item {
-            margin-right: 80px;
-            display: inline-block;
-            letter-spacing: 1px;
-        }
-
-        /* SEÇÃO CENTRAL DAS CÂMERAS */
         .camera-section {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #000;
-        }
-
-        .iframe-crop-container {
             position: relative;
-            flex: 1;
+            background: #111;
             overflow: hidden;
         }
 
-        .wrapper-zoomable {
+        /* O segredo: Esta camada invisível só aparece para permitir o arrasto */
+        #touch-overlay {
             position: absolute;
-            left: 0; 
-            top: 0;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 500;
+            display: none; /* Começa desativado */
+            background: rgba(56, 189, 248, 0.1);
+            cursor: move;
+        }
+
+        #cam-wrapper {
+            position: absolute;
             width: 100%;
             height: 100%;
-            transform-origin: top left;
-            transition: transform 0.2s ease;
+            transform-origin: center center;
+            will-change: transform;
         }
 
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* CONTROLES DE ZOOM RESTAURADOS */
-        .zoom-controls {
+        .controls {
             position: absolute;
-            bottom: 15px; 
-            right: 15px;
-            z-index: 2000;
-            display: flex; 
-            gap: 8px;
-            opacity: 0.1; /* Quase invisível para não atrapalhar a live */
-            transition: opacity 0.3s;
+            bottom: 10px; right: 10px;
+            z-index: 1000;
+            display: flex; flex-direction: column; gap: 10px;
         }
-        .zoom-controls:hover { opacity: 1; }
 
-        .btn-zoom {
+        .btn {
             background: var(--accent);
             border: none;
             color: #000;
-            font-weight: 900;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 20px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            min-width: 44px;
         }
+
+        .active-mode { background: #ff4444 !important; color: white; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <header class="news-bar">
-            <div class="news-label">STATUS METRÔ/CPTM</div>
-            <marquee scrollamount="10" class="status-marquee">
-                Sincronizando dados de transporte...
-            </marquee>
+            <div class="news-label">METRÔ/CPTM</div>
+            <marquee id="m1" scrollamount="8"></marquee>
         </header>
 
-        <section class="camera-section">
-            <div class="iframe-crop-container">
-                <div class="zoom-controls">
-                    <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
-                    <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
-                    <button class="btn-zoom" style="font-size: 10px;" onclick="resetZoom()">RST</button>
-                </div>
-                
-                <div class="wrapper-zoomable" id="cam-wrapper">
-                    <iframe src="https://transitoaovivo.com/transito-cetsp-2/"></iframe>
-                </div>
+        <section class="camera-section" id="viewport">
+            <div id="touch-overlay"></div>
+            
+            <div id="cam-wrapper">
+                <iframe src="https://transitoaovivo.com/transito-cetsp-2/"></iframe>
+            </div>
+
+            <div class="controls">
+                <button class="btn" id="lock-btn" onclick="toggleLock()">AJUSTAR TELA</button>
+                <button class="btn" onclick="changeZoom(0.2)">+</button>
+                <button class="btn" onclick="changeZoom(-0.2)">-</button>
+                <button class="btn" onclick="resetAll()">RST</button>
             </div>
         </section>
 
         <footer class="news-bar">
-            <div class="news-label">INFORMAÇÃO AO VIVO</div>
-            <marquee scrollamount="10" class="status-marquee">
-                Sincronizando dados de transporte...
-            </marquee>
-        </footer>
+            <div class="news-label">AO VIVO</div>
+            <marquee id="m2" scrollamount="8"></marquee>
+        </footer >
     </div>
 
     <script>
-        let currentZoom = 1.0;
+        let scale = 1, posX = 0, posY = 0, isLocked = false;
         const wrapper = document.getElementById('cam-wrapper');
+        const overlay = document.getElementById('touch-overlay');
+        const lockBtn = document.getElementById('lock-btn');
 
-        // Função de Zoom
+        function toggleLock() {
+            isLocked = !isLocked;
+            overlay.style.display = isLocked ? 'block' : 'none';
+            lockBtn.classList.toggle('active-mode');
+            lockBtn.innerText = isLocked ? 'SALVAR POSIÇÃO' : 'AJUSTAR TELA';
+        }
+
         function changeZoom(delta) {
-            currentZoom = Math.max(0.5, Math.min(3.0, currentZoom + delta));
-            applyStyles();
+            scale = Math.max(0.5, Math.min(5, scale + delta));
+            update();
         }
 
-        function resetZoom() {
-            currentZoom = 1.0;
-            applyStyles();
+        function resetAll() {
+            scale = 1; posX = 0; posY = 0;
+            update();
         }
 
-        function applyStyles() {
-            wrapper.style.transform = `scale(${currentZoom})`;
-            // Ajusta a largura e altura para não sobrar espaço preto ao dar zoom out
-            if (currentZoom < 1) {
-                wrapper.style.width = (100 / currentZoom) + "%";
-                wrapper.style.height = (100 / currentZoom) + "%";
-            } else {
-                wrapper.style.width = "100%";
-                wrapper.style.height = "100%";
-            }
+        function update() {
+            wrapper.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
         }
 
-        // Lógica do Marquee
+        // Lógica Unificada (Mouse + Touch)
+        let startX, startY, initialX, initialY;
+
+        const startAction = (e) => {
+            const touch = e.type === 'touchstart' ? e.touches[0] : e;
+            startX = touch.clientX;
+            startY = touch.clientY;
+            initialX = posX;
+            initialY = posY;
+        };
+
+        const moveAction = (e) => {
+            if (e.type === 'touchmove') e.preventDefault();
+            const touch = e.type === 'touchmove' ? e.touches[0] : e;
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+            posX = initialX + dx;
+            posY = initialY + dy;
+            update();
+        };
+
+        // Eventos para a Overlay
+        overlay.addEventListener('mousedown', startAction);
+        overlay.addEventListener('touchstart', startAction, {passive: false});
+
+        window.addEventListener('mousemove', (e) => { if(isLocked && e.buttons === 1) moveAction(e); });
+        overlay.addEventListener('touchmove', (e) => { if(isLocked) moveAction(e); }, {passive: false});
+
+        // Marquee
         const API_URL = 'https://www.tictrens.com.br/helper/line-statuses';
         const PROXY = 'https://corsproxy.io/?' + encodeURIComponent(API_URL);
 
@@ -184,26 +186,15 @@
             try {
                 const response = await fetch(PROXY);
                 const json = await response.json();
-                const marquees = document.querySelectorAll('.status-marquee');
-                
-                let textStatus = "";
-
-                json.data.forEach(group => {
-                    group.listItem.forEach(item => {
-                        const status = item.status.toUpperCase();
-                        const color = item.status.toLowerCase().includes('normal') ? '🟢' : '🟡';
-                        textStatus += `<span class="marquee-item">${color} ${item.line}: ${status}</span>`;
-                    });
-                });
-
-                marquees.forEach(m => {
-                    m.innerHTML = textStatus + textStatus;
-                });
-            } catch (err) { console.error(err); }
+                let txt = "";
+                json.data.forEach(g => g.listItem.forEach(i => {
+                    txt += ` <span style="margin-right:50px">${i.status.includes('Normal')?'🟢':'🟡'} ${i.line}: ${i.status.toUpperCase()}</span> `;
+                }));
+                document.getElementById('m1').innerHTML = txt + txt;
+                document.getElementById('m2').innerHTML = txt + txt;
+            } catch(e) {}
         }
-
-        loadData();
-        setInterval(loadData, 60000);
+        loadData(); setInterval(loadData, 60000);
     </script>
 </body>
 </html>
