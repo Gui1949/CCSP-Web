@@ -26,9 +26,9 @@
             width: 100vw; 
         }
 
-        /* BARRA ESTILO NEWS (USADA NO TOPO E NO RODAPÉ) */
+        /* BARRA ESTILO NEWS */
         .news-bar {
-            height: 70px; /* Aumentado para comportar o texto maior */
+            height: 70px;
             background: var(--bar-bg);
             display: flex;
             align-items: center;
@@ -52,7 +52,7 @@
         }
 
         marquee {
-            font-size: 36px; /* 2X maior como solicitado */
+            font-size: 36px;
             font-weight: 900;
             color: #fff;
             display: flex;
@@ -77,25 +77,43 @@
             position: relative;
             flex: 1;
             overflow: hidden;
-        
         }
 
         .wrapper-zoomable {
-            display: flex;
-            flex: 1;
+            position: absolute;
+            left: 0; 
+            top: 0;
+            width: 100%;
             height: 100%;
-            position: relative;
             transform-origin: top left;
+            transition: transform 0.2s ease;
         }
 
         iframe { width: 100%; height: 100%; border: none; }
 
+        /* CONTROLES DE ZOOM RESTAURADOS */
         .zoom-controls {
             position: absolute;
-            bottom: 5px; right: 5px;
-            z-index: 100;
-            display: flex; gap: 5px;
-            opacity: 0.2;
+            bottom: 15px; 
+            right: 15px;
+            z-index: 2000;
+            display: flex; 
+            gap: 8px;
+            opacity: 0.1; /* Quase invisível para não atrapalhar a live */
+            transition: opacity 0.3s;
+        }
+        .zoom-controls:hover { opacity: 1; }
+
+        .btn-zoom {
+            background: var(--accent);
+            border: none;
+            color: #000;
+            font-weight: 900;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
         }
     </style>
 </head>
@@ -111,6 +129,12 @@
 
         <section class="camera-section">
             <div class="iframe-crop-container">
+                <div class="zoom-controls">
+                    <button class="btn-zoom" onclick="changeZoom(0.1)">+</button>
+                    <button class="btn-zoom" onclick="changeZoom(-0.1)">-</button>
+                    <button class="btn-zoom" style="font-size: 10px;" onclick="resetZoom()">RST</button>
+                </div>
+                
                 <div class="wrapper-zoomable" id="cam-wrapper">
                     <iframe src="https://transitoaovivo.com/transito-cetsp-2/"></iframe>
                 </div>
@@ -126,6 +150,33 @@
     </div>
 
     <script>
+        let currentZoom = 1.0;
+        const wrapper = document.getElementById('cam-wrapper');
+
+        // Função de Zoom
+        function changeZoom(delta) {
+            currentZoom = Math.max(0.5, Math.min(3.0, currentZoom + delta));
+            applyStyles();
+        }
+
+        function resetZoom() {
+            currentZoom = 1.0;
+            applyStyles();
+        }
+
+        function applyStyles() {
+            wrapper.style.transform = `scale(${currentZoom})`;
+            // Ajusta a largura e altura para não sobrar espaço preto ao dar zoom out
+            if (currentZoom < 1) {
+                wrapper.style.width = (100 / currentZoom) + "%";
+                wrapper.style.height = (100 / currentZoom) + "%";
+            } else {
+                wrapper.style.width = "100%";
+                wrapper.style.height = "100%";
+            }
+        }
+
+        // Lógica do Marquee
         const API_URL = 'https://www.tictrens.com.br/helper/line-statuses';
         const PROXY = 'https://corsproxy.io/?' + encodeURIComponent(API_URL);
 
