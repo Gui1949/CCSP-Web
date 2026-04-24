@@ -186,15 +186,28 @@
             try {
                 const response = await fetch(PROXY);
                 const json = await response.json();
+                
                 let txt = "";
                 json.data.forEach(g => g.listItem.forEach(i => {
                     txt += ` <span style="margin-right:50px">${i.status.includes('Normal')?'🟢':'🟡'} ${i.line}: ${i.status.toUpperCase()}</span> `;
                 }));
-                document.getElementById('m1').innerHTML = txt + txt;
-                document.getElementById('m2').innerHTML = txt + txt;
-            } catch(e) {}
+
+                const fullContent = txt + txt;
+
+                // SÓ ATUALIZA SE O CONTEÚDO MUDOU (evita o reset da animação)
+                if (fullContent !== lastStatusHash) {
+                    document.getElementById('m1').innerHTML = fullContent;
+                    document.getElementById('m2').innerHTML = fullContent;
+                    lastStatusHash = fullContent;
+                    console.log("Status atualizado!");
+                }
+            } catch(e) {
+                console.error("Erro ao carregar dados do metrô:", e);
+            }
         }
-        loadData(); setInterval(loadData, 60000);
+        
+        loadData(); 
+        setInterval(loadData, 60000); // Continua verificando a cada 1 minuto
     </script>
 </body>
-</html>
+</html> 
